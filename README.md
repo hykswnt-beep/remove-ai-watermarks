@@ -42,6 +42,7 @@ removal.
 | Regenerate an image to disrupt invisible watermarks | `invisible` | Required (CUDA) |
 | Run visible, invisible, and metadata removal | `all` | Recommended |
 | Process a directory | `batch` | Depends on mode |
+| Use a local browser UI | `serve` | Only for the SynthID stage |
 
 ## Installation modes
 
@@ -53,10 +54,11 @@ removal.
 | Video SynthID removal | `remove-ai-watermarks[video,diffusion]` |
 | Torch-free DWT-DCT detection | `remove-ai-watermarks[detect]` |
 | Invisible image removal (needs CUDA) | `remove-ai-watermarks[qwen-zimage]` |
+| Local browser UI | `remove-ai-watermarks[web,visible]` |
 | Every production feature | `remove-ai-watermarks[all]` |
 
 Lower-level and specialized extras include `pixels`, `heif`, `trustmark`,
-`migan`, `lama`, and `diffusion`. The
+`migan`, `lama`, `web`, and `diffusion`. The
 [installation guide](docs/installation.md#feature-extras) documents their exact
 dependency composition and model requirements.
 
@@ -93,6 +95,17 @@ remove-ai-watermarks metadata image.png --remove -o clean.png
 ```
 
 Without `-o` this command overwrites the source in place.
+
+Run the optional local browser UI on Windows, macOS, or Linux:
+
+```bash
+uv tool install --force "remove-ai-watermarks[web,visible]"
+remove-ai-watermarks serve
+```
+
+It binds to `127.0.0.1:7860` and covers provenance inspection, visible-mark
+removal, and C2PA/AI metadata stripping. Image SynthID removal is CUDA-only and
+stays disabled with an explicit reason on hosts without an NVIDIA GPU.
 
 Inspect or remove AI metadata from an MP4, MOV, M4V, WebM, MKV, AVI, or FLV
 file:

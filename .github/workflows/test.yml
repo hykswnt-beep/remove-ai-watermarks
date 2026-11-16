@@ -45,6 +45,23 @@ jobs:
       - name: Run tests
         run: uv run pytest -q
 
+  web-ui:
+    name: web UI ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+      - name: Sync web environment
+        run: uv sync --frozen --extra dev --extra web
+      - name: Run web UI tests
+        run: uv run pytest -q tests/test_webapp.py
+
   transport-contract-python-314:
     name: versioned transport contracts py3.14
     runs-on: ubuntu-latest

@@ -154,6 +154,18 @@ def _validate_image(path: Path) -> Path:
     return path
 
 
+def _require_pixels(command: str) -> None:
+    """Fail with an install hint instead of a cv2 traceback on a base install."""
+    from remove_ai_watermarks.optional_deps import module_available
+
+    if not module_available("cv2", "numpy"):
+        console.print(
+            f"  Error: the '{command}' command needs the pixel runtime.\n"
+            "  Install it with: pip install 'remove-ai-watermarks[visible]'"
+        )
+        raise SystemExit(1)
+
+
 def _resolved_strength_for_display(
     source: Path,
     strength: float | None,
@@ -653,6 +665,7 @@ def cmd_visible(
     """
     _banner()
     source = _validate_image(source)
+    _require_pixels("visible")
 
     if output is None:
         output = source.with_stem(source.stem + "_clean")
@@ -730,10 +743,11 @@ def cmd_erase(
     the boxes you pass, regardless of color or location. Runs on CPU. Use this
     for marks the dedicated ``visible`` registry does not cover.
     """
-    from remove_ai_watermarks.region_eraser import erase
-
     _banner()
     source = _validate_image(source)
+    _require_pixels("erase")
+    from remove_ai_watermarks.region_eraser import erase
+
     if output is None:
         output = source.with_stem(source.stem + "_clean")
 
@@ -1436,6 +1450,7 @@ def cmd_all(
     """
     _banner()
     source = _validate_image(source)
+    _require_pixels("all")
 
     if output is None:
         output = source.with_stem(source.stem + "_clean")
@@ -1542,6 +1557,48 @@ def cmd_all(
         raise SystemExit(1)
 
 
+# ── Local web UI ──
+@main.command("serve")
+@click.option(
+    "--host",
+    default="127.0.0.1",
+    show_default=True,
+    help="Interface to bind. Keep loopback unless an authenticated proxy is in front.",
+)
+@click.option(
+    "--port",
+    default=7860,
+    show_default=True,
+    type=click.IntRange(1, 65535),
+    help="TCP port for the local web UI.",
+)
+def cmd_serve(host: str, port: int) -> None:
+    """Serve the optional browser UI on this machine.
+
+    Needs the 'web' extra. SynthID image removal is offered only when this host
+    has an NVIDIA CUDA GPU; on other hosts the control is disabled with the reason.
+    """
+    from remove_ai_watermarks.webapp import build_app, capability_lines
+
+    _banner()
+    try:
+        app = build_app()
+    except ImportError as exc:
+        console.print(f"  Error: {exc}")
+        raise SystemExit(1) from exc
+
+    console.print(f"  URL: http://{host}:{port}/")
+    for line in capability_lines():
+        console.print(f"  {line}")
+    if host not in {"127.0.0.1", "localhost", "::1"}:
+        console.print("  Warning: this server has no authentication; anyone who can reach it can upload images.")
+    try:
+        app.launch(server_name=host, server_port=port, show_error=True, quiet=True)
+    except OSError as exc:
+        console.print(f"  Error: could not start the server on {host}:{port}: {exc}")
+        raise SystemExit(1) from exc
+
+
 # ── Batch command ──
 def _batch_engine(mode: str, options: InvisibleOptions) -> object | None:
     """Build the ONE invisible engine this batch reuses, or None.
@@ -1616,6 +1673,8 @@ def cmd_batch(
 ) -> None:
     """Process all images in a directory."""
     _banner()
+    if mode != "metadata":
+        _require_pixels("batch")
 
     if output_dir is None:
         output_dir = directory.parent / (directory.name + "_clean")

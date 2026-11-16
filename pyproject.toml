@@ -146,6 +146,12 @@ migan = [
     "onnxruntime>=1.16.0; python_version >= '3.11'",
     "huggingface-hub>=0.20.0",
 ]
+# Local browser UI. Optional so the default install stays metadata-only and a
+# headless deployment does not carry a web stack. The UI gates SynthID image
+# removal on CUDA availability instead of failing mid-run.
+web = [
+    "gradio>=6,<7",
+]
 dev = [
     "remove-ai-watermarks[video]",
     "remove-ai-watermarks[detect]",
@@ -163,7 +169,7 @@ dev = [
 ]
 # ``qwen-zimage`` already pulls ``diffusion``; naming both would suggest diffusion is
 # independently sufficient for a removal, which it is not.
-all = ["remove-ai-watermarks[video,heif,detect,trustmark,qwen-zimage,lama,migan]"]
+all = ["remove-ai-watermarks[video,heif,detect,trustmark,qwen-zimage,lama,migan,web]"]
 
 [project.scripts]
 remove-ai-watermarks = "remove_ai_watermarks.cli:main"

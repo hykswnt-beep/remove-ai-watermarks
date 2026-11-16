@@ -25,6 +25,8 @@ defaults. This page focuses on choosing the right command.
 | `video identify` | `remove-ai-watermarks[video]` |
 | `video visible`, `video all`, and visible/all batch modes | `remove-ai-watermarks[video]` plus ffmpeg on PATH |
 | `video invisible` and `video all --invisible` | `remove-ai-watermarks[video,diffusion]` plus ffmpeg on PATH |
+| Local browser UI (`serve`) | `remove-ai-watermarks[web]`, plus `[visible]` for visible cleaning |
+| SynthID checkbox in the browser UI | Add `remove-ai-watermarks[qwen-zimage]` on an NVIDIA CUDA host |
 | HEIC/HEIF/AVIF pixel input | Add `remove-ai-watermarks[heif]` |
 | Every production command and backend | `remove-ai-watermarks[all]` |
 
@@ -452,6 +454,36 @@ If the extra is installed but the machine has no CUDA, which is the usual macOS
 case, the run fails at engine construction instead: `all` prints
 `Error: Invisible-watermark removal is CUDA-only ...`, writes no output at all,
 and exits with code 1.
+
+## Run the local web UI
+
+```bash
+uv tool install --force "remove-ai-watermarks[web,visible]"
+remove-ai-watermarks serve
+```
+
+Open `http://127.0.0.1:7860/`. The UI offers provenance inspection, visible-mark
+removal, and AI metadata stripping (C2PA included). Bind a different interface
+with `--host` and `--port`:
+
+```bash
+remove-ai-watermarks serve --host 127.0.0.1 --port 8080
+```
+
+The server has no authentication. Keep the default loopback binding unless an
+authenticated reverse proxy is in front; `serve` prints a warning when the host
+is reachable from the network.
+
+Image SynthID removal is CUDA-only. Install the `qwen-zimage` extra on an NVIDIA
+CUDA host to enable the SynthID checkbox:
+
+```bash
+uv tool install --force "remove-ai-watermarks[web,visible,qwen-zimage]"
+```
+
+On any other host (including macOS), the checkbox is disabled and the UI states
+why; metadata and visible cleaning still run. The web server itself runs on
+Windows, macOS, and Linux.
 
 ## Process a directory
 

@@ -87,6 +87,28 @@ removal, metadata stripping and every `identify` command still run anywhere.
 Video SynthID regeneration is a separate VAE path and does still run on CPU or MPS;
 it needs the `diffusion` extra, not this one.
 
+## Local web UI
+
+Install the `web` extra and start the server:
+
+```bash
+uv tool install --force "remove-ai-watermarks[web,visible]"
+remove-ai-watermarks serve
+```
+
+The UI runs on Windows, macOS, and Linux and binds to `127.0.0.1:7860` by
+default. It provides provenance inspection, visible-mark removal, and AI metadata
+stripping, including C2PA. Add `qwen-zimage` on an NVIDIA CUDA host to enable the
+SynthID checkbox:
+
+```bash
+uv tool install --force "remove-ai-watermarks[web,visible,qwen-zimage]"
+```
+
+On a host without CUDA the checkbox is disabled and the reason is shown; the
+other actions remain available. The server has no authentication, so keep the
+loopback binding unless an authenticated proxy is in front.
+
 ## Feature extras
 
 Extras are composable. Install only the capabilities and file formats the
@@ -104,6 +126,7 @@ application actually uses:
 | `migan` | MI-GAN ONNX fill backend | `visible`, ONNX Runtime | Model download, no Torch |
 | `lama` | big-LaMa ONNX fill backend | `visible`, ONNX Runtime | Model download, no Torch |
 | `qwen-zimage` | Invisible image-watermark removal, both CUDA-only profiles | `diffusion`, DiffSynth | Yes |
+| `web` | Local browser UI (`serve`) | Gradio | No |
 | `all` | Every production feature | All rows above | Yes |
 | `dev` | Tests, linting, typing, and upstream parity checks | `video`, `detect`, upstream invisible-watermark | Yes, for parity tests |
 

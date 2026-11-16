@@ -112,3 +112,30 @@ class TestDirectoryInputIsRejected:
         result = CliRunner().invoke(main, args)
         assert result.exit_code != 0
         assert not isinstance(result.exception, IsADirectoryError), "directory reached the file reader"
+
+
+class TestMissingPixelRuntime:
+    """A base install must say which extra to install, not raise a cv2 traceback."""
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            ["visible", "{src}"],
+            ["erase", "{src}", "--region", "1,1,5,5"],
+            ["all", "{src}"],
+            ["batch", "{dir}", "--mode", "visible"],
+        ],
+        ids=["visible", "erase", "all", "batch"],
+    )
+    def test_reports_the_install_hint(self, tmp_path, monkeypatch, command):
+        src = tmp_path / "in.png"
+        image_io.imwrite(src, np.full((8, 8, 3), 128, np.uint8))
+        indir = tmp_path / "batch-in"
+        indir.mkdir()
+        image_io.imwrite(indir / "x.png", np.full((8, 8, 3), 128, np.uint8))
+        args = [arg.format(src=src, dir=indir) for arg in command]
+        monkeypatch.setattr("remove_ai_watermarks.optional_deps.module_available", lambda *names: False)
+        result = CliRunner().invoke(main, args)
+        assert result.exit_code != 0
+        assert "[visible]" in result.output
+        assert not isinstance(result.exception, ModuleNotFoundError)
